@@ -1,0 +1,70 @@
+/*----------------------------------------------------------------------------*/
+/*                                                                            */
+/*    Module:       main.cpp                                                  */
+/*    Author:       17918                                                     */
+/*    Created:      Thu Sep 21 2023                                           */
+/*    Description:  V5 project                                                */
+/*                                                                            */
+/*----------------------------------------------------------------------------*/
+
+// ---- START VEXCODE CONFIGURED DEVICES ----
+// Robot Configuration:
+// [Name]               [Type]        [Port(s)]
+// Controller1          controller                    
+// Motor3               motor         3               
+// Motor8               motor         8               
+// Motor13              motor         13              
+// Motor18              motor         18              
+// ---- END VEXCODE CONFIGURED DEVICES ----
+
+#include "vex.h"
+
+
+using namespace vex;
+
+
+
+
+
+double Turn = 0;
+double Power = 0;
+
+
+
+
+
+
+int main() {
+  // Initializing Robot Configuration. DO NOT REMOVE!
+  vexcodeInit();
+  while(1){
+    if ((abs(Controller1.Axis1.value())> 15)){
+      Turn = -Controller1.Axis1.value()/20;
+    }
+    else 
+    Turn = 0;
+    if ((abs(Controller1.Axis3.value())> 15)){
+      Power = -Controller1.Axis3.value()/11;
+    }
+    else 
+    Power = 0;
+    
+    double Left = Turn + Power;
+    double Right = Turn - Power;
+
+    
+    Motor3.spin(fwd,Left,vex::voltageUnits::volt);
+    Motor13.spin(fwd,Left,vex::voltageUnits::volt);
+    Motor8.spin(fwd,Right,vex::voltageUnits::volt);
+    Motor18.spin(fwd,Right,vex::voltageUnits::volt);
+  }
+  
+
+
+
+
+
+}
+
+
+
