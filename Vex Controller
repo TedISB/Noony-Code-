@@ -19,25 +19,21 @@
 
 #include "vex.h"
 
-
 using namespace vex;
-
-
-
-
-
+competition Competition;
 double Turn = 0;
 double Power = 0;
 
-
-
-
-
-
-int main() {
-  // Initializing Robot Configuration. DO NOT REMOVE!
-  vexcodeInit();
-  while(1){
+void autonomous(void) {
+  while(true){
+vexcodeInit();  
+Motor6.spin(fwd, 100, pct);
+task::sleep(1000*60);
+}
+}
+void con(){
+ 
+  while(1){ 
     if ((abs(Controller1.Axis1.value())> 15)){
       Turn = -Controller1.Axis1.value()/20;
     }
@@ -52,19 +48,18 @@ int main() {
     double Left = Turn + Power;
     double Right = Turn - Power;
 
-    
     Motor3.spin(fwd,Left,vex::voltageUnits::volt);
     Motor13.spin(fwd,Left,vex::voltageUnits::volt);
     Motor8.spin(fwd,Right,vex::voltageUnits::volt);
     Motor18.spin(fwd,Right,vex::voltageUnits::volt);
+
+    
   }
-  
-
-
-
-
-
 }
-
-
-
+int main() {
+  Competition.autonomous(autonomous);
+  Competition.drivercontrol(con);
+  // Initializing Robot Configuration. DO NOT REMOVE!
+  vexcodeInit();
+  
+  }
