@@ -11,8 +11,10 @@
 // Robot Configuration:
 // [Name]               [Type]        [Port(s)]
 // Controller1          controller                    
-// Motor3               motor         3               
-// Motor8               motor         8               
+// Motor3               motor         3
+// Motor6               motor         6
+// Motor8               motor         8
+// Motor10              motor         10
 // Motor13              motor         13              
 // Motor18              motor         18              
 // ---- END VEXCODE CONFIGURED DEVICES ----
@@ -32,18 +34,20 @@ task::sleep(1000*60);
 }
 }
 void con(){
+
+
  
   while(1){ 
     if ((abs(Controller1.Axis1.value())> 15)){
       Turn = -Controller1.Axis1.value()/20;
     }
     else 
-    Turn = 0;
+      Turn = 0;
     if ((abs(Controller1.Axis3.value())> 15)){
       Power = -Controller1.Axis3.value()/11;
     }
     else 
-    Power = 0;
+      Power = 0;
     
     double Left = Turn + Power;
     double Right = Turn - Power;
@@ -61,5 +65,8 @@ int main() {
   Competition.drivercontrol(con);
   // Initializing Robot Configuration. DO NOT REMOVE!
   vexcodeInit();
+  
+
+  
   
   }
