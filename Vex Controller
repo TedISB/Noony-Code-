@@ -11,12 +11,11 @@
 // Robot Configuration:
 // [Name]               [Type]        [Port(s)]
 // Controller1          controller                    
-// Motor3               motor         3
 // Motor6               motor         6
 // Motor8               motor         8
-// Motor10              motor         10
-// Motor13              motor         13              
-// Motor18              motor         18              
+// Motor10              motor        10
+// Motor16              motor         16
+// Motor18              motor         18                            
 // ---- END VEXCODE CONFIGURED DEVICES ----
 
 #include "vex.h"
@@ -29,7 +28,7 @@ double Power = 0;
 void autonomous(void) {
   while(true){
 vexcodeInit();  
-Motor6.spin(fwd, 100, pct);
+Motor10.spin(fwd, 100, pct);
 task::sleep(1000*60);
 }
 }
@@ -52,10 +51,10 @@ void con(){
     double Left = Turn + Power;
     double Right = Turn - Power;
 
-    Motor3.spin(fwd,Left,vex::voltageUnits::volt);
-    Motor13.spin(fwd,Left,vex::voltageUnits::volt);
+    Motor16.spin(fwd,Left,vex::voltageUnits::volt);
+    Motor18.spin(fwd,Left,vex::voltageUnits::volt);
+    Motor6.spin(fwd,Right,vex::voltageUnits::volt);
     Motor8.spin(fwd,Right,vex::voltageUnits::volt);
-    Motor18.spin(fwd,Right,vex::voltageUnits::volt);
 
     
   }
