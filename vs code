@@ -94,14 +94,16 @@ void usercontrol(void) {
     if (Controller1.ButtonR1.pressing()){
       motorIntake.spin(reverse, 100, pct);
     }
+    else if (Controller1.ButtonR2.pressing()){
+        motorIntake.spin(fwd, 100, pct);
+    }
     else
       motorIntake.stop(brakeType::hold);
     
-    }
-
+    //Do not remove wait->Prevent overuse of CPU
     wait(20, msec);
   }
-
+}
 //
 // Main will set up the competition functions and callbacks.
 //
