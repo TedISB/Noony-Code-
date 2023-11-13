@@ -1,0 +1,112 @@
+/*----------------------------------------------------------------------------*/
+/*                                                                            */
+/*    Module:       main.cpp                                                  */
+/*    Author:       20901                                                     */
+/*    Created:      11/10/2023, 3:06:18 PM                                    */
+/*    Description:  V5 project                                                */
+/*                                                                            */
+/*----------------------------------------------------------------------------*/
+#include "vex.h"
+using namespace vex;
+// A global instance of competition
+competition Competition;
+vex::brain                 Brain;
+double Turn = 0;
+double Power = 0;
+// define your global instances of motors and other devices here
+controller Controller1 = controller(controllerType::primary);
+motor motorleftFrM = motor(PORT16);
+motor motorleftBkM = motor(PORT18);
+motor motorrightFrM = motor(PORT6);
+motor motorrightBkM = motor(PORT8);
+motor motorIntake = motor(PORT2);
+motor motorCata = motor(PORT10);
+motor_group LeftSide = motor_group(motorleftFrM,motorleftBkM);
+motor_group RightSide = motor_group(motorrightFrM,motorrightBkM);
+drivetrain Drivetrain = drivetrain(LeftSide, RightSide);
+/*---------------------------------------------------------------------------*/
+/*                          Pre-Autonomous Functions                         */
+/*                                                                           */
+/*  You may want to perform some actions before the competition starts.      */
+/*  Do them in the following function.  You must return from this function   */
+/*  or the autonomous and usercontrol tasks will not be started.  This       */
+/*  function is only called once after the V5 has been powered on and        */
+/*  not every time that the robot is disabled.                               */
+/*---------------------------------------------------------------------------*/
+void pre_auton(void) {
+  
+}
+/*---------------------------------------------------------------------------*/
+/*                                                                           */
+/*                              Autonomous Task                              */
+/*                                                                           */
+/*  This task is used to control your robot during the autonomous phase of   */
+/*  a VEX Competition.                                                       */
+/*                                                                           */
+/*  You must modify the code to add your own robot specific commands here.   */
+/*---------------------------------------------------------------------------*/
+void autonomous(void) {
+  while(true){ 
+  Drivetrain.drive(fwd);
+  task::sleep(2000);
+  Drivetrain.stop();
+  }
+}
+void usercontrol(void) {
+  // User control code here, inside the loop
+  while (1) {
+    if ((abs(Controller1.Axis1.value())> 15)){
+      Turn = -Controller1.Axis1.value()/20;
+    }
+    else 
+      Turn = 0;
+    if ((abs(Controller1.Axis3.value())> 15)){
+      Power = -Controller1.Axis3.value()/11;
+    }
+    else{
+        Power = 0;
+    }
+  }
+
+     
+    
+    double Left = Turn + Power;
+    double Right = Turn - Power;
+    LeftSide.spin(fwd,Left,vex::voltageUnits::volt);
+    RightSide.spin(fwd,Right,vex::voltageUnits::volt);
+    
+    if (Controller1.ButtonL1.pressing()){
+      motorCata.spin(fwd, 100, pct);
+    } 
+    else 
+      motorCata.stop(brakeType::hold);
+    if (Controller1.ButtonR1.pressing()){
+      motorIntake.spin(reverse, 100, pct);
+    }
+    else if (Controller1.ButtonR2.pressing()){
+        motorIntake.spin(fwd, 100, pct);
+    }
+    else
+      motorIntake.stop(brakeType::hold);
+      task::sleep(20);
+    }
+
+    //Do not remove wait->Prevent overuse of CPU
+    
+  
+
+//
+// Main will set up the competition functions and callbacks.
+//
+int main() {
+  
+  Competition.autonomous(autonomous);
+  Competition.drivercontrol(usercontrol);
+  // Run pre-auton
+  pre_auton();
+  
+  // Prevent main from exiting with an infinite loop.
+  while (true) {
+    wait(100, msec);
+  }
+}
