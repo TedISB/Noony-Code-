@@ -1,42 +1,74 @@
 /*----------------------------------------------------------------------------*/
 /*                                                                            */
 /*    Module:       main.cpp                                                  */
-/*    Author:       17918                                                     */
-/*    Created:      Thu Sep 21 2023                                           */
+/*    Author:       20901                                                     */
+/*    Created:      11/10/2023, 3:06:18 PM                                    */
 /*    Description:  V5 project                                                */
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-// ---- START VEXCODE CONFIGURED DEVICES ----
-// Robot Configuration:
-// [Name]               [Type]        [Port(s)]
-// Controller1          controller                    
-// Motor6               motor         6
-// Motor8               motor         8
-// Motor10              motor        10
-// Motor16              motor         16
-// Motor18              motor         18                            
-// ---- END VEXCODE CONFIGURED DEVICES ----
-
 #include "vex.h"
-
 using namespace vex;
+
+// A global instance of competition
 competition Competition;
+
+vex::brain                 Brain;
 double Turn = 0;
 double Power = 0;
 
+// define your global instances of motors and other devices here
+
+controller Controller1 = controller(controllerType::primary);
+motor motorleftFrM = motor(PORT16);
+motor motorleftBkM = motor(PORT18);
+motor motorrightFrM = motor(PORT6);
+motor motorrightBkM = motor(PORT8);
+motor motorIntake = motor(PORT2);
+motor motorCata = motor(PORT10, ratio36_1, true);
+motor motorCatatwo = motor(PORT15, ratio36_1, false);
+
+
+
+motor_group LeftSide = motor_group(motorleftFrM,motorleftBkM);
+motor_group RightSide = motor_group(motorrightFrM,motorrightBkM);
+motor_group Catapult = motor_group(motorCatatwo, motorCata);
+
+/*---------------------------------------------------------------------------*/
+/*                          Pre-Autonomous Functions                         */
+/*                                                                           */
+/*  You may want to perform some actions before the competition starts.      */
+/*  Do them in the following function.  You must return from this function   */
+/*  or the autonomous and usercontrol tasks will not be started.  This       */
+/*  function is only called once after the V5 has been powered on and        */
+/*  not every time that the robot is disabled.                               */
+/*---------------------------------------------------------------------------*/
+
+void pre_auton(void) {
+  
+}
+
+/*---------------------------------------------------------------------------*/
+/*                                                                           */
+/*                              Autonomous Task                              */
+/*                                                                           */
+/*  This task is used to control your robot during the autonomous phase of   */
+/*  a VEX Competition.                                                       */
+/*                                                                           */
+/*  You must modify the code to add your own robot specific commands here.   */
+/*---------------------------------------------------------------------------*/
+
 void autonomous(void) {
-  while(true){
-vexcodeInit();  
-Motor10.spin(fwd, 100, pct);
-task::sleep(1000*60);
+  while(true){ 
+  //motorCata.spin(reverse, 100, pct);
+  //task::sleep(1000*60);
+  }
 }
-}
-void con(){
 
 
- 
-  while(1){ 
+void usercontrol(void) {
+  // User control code here, inside the loop
+  while (1) {
     if ((abs(Controller1.Axis1.value())> 15)){
       Turn = -Controller1.Axis1.value()/20;
     }
@@ -45,27 +77,56 @@ void con(){
     if ((abs(Controller1.Axis3.value())> 15)){
       Power = -Controller1.Axis3.value()/11;
     }
-    else 
-      Power = 0;
+    else{
+        Power = 0;
+    }
+     
     
     double Left = Turn + Power;
     double Right = Turn - Power;
 
-    Motor16.spin(fwd,Left,vex::voltageUnits::volt);
-    Motor18.spin(fwd,Left,vex::voltageUnits::volt);
-    Motor6.spin(fwd,Right,vex::voltageUnits::volt);
-    Motor8.spin(fwd,Right,vex::voltageUnits::volt);
+    LeftSide.spin(fwd,Left,vex::voltageUnits::volt);
+    RightSide.spin(fwd,Right,vex::voltageUnits::volt);
 
     
+
+    
+
+    if (Controller1.ButtonL1.pressing()){
+      Catapult.spin(reverse, 40, pct);
+    }
+    else
+      Catapult.stop(brakeType::hold);
+    
+    
+    if (Controller1.ButtonR1.pressing()){
+      motorIntake.spin(reverse, 70, pct);
+    }
+    else if (Controller1.ButtonR2.pressing()){
+        motorIntake.spin(fwd, 70, pct);
+    }
+    else
+      motorIntake.stop(brakeType::hold);
+    
+    //Do not remove wait->Prevent overuse of CPU
+    wait(20, msec);
   }
 }
+
+//
+// Main will set up the competition functions and callbacks.
+//
 int main() {
+  
   Competition.autonomous(autonomous);
-  Competition.drivercontrol(con);
-  // Initializing Robot Configuration. DO NOT REMOVE!
-  vexcodeInit();
+  Competition.drivercontrol(usercontrol);
+
+  // Run pre-auton
+  pre_auton();
   
 
-  
-  
+  // Prevent main from exiting with an infinite loop.
+  while (true) {
+    wait(100, msec);
   }
+}
