@@ -51,25 +51,18 @@ void pre_auton(void) {
 void autonomous(void) {
 
   Drivetrain.setDriveVelocity(40,pct);
-  LeftSide.spin(reverse);
-  RightSide.spin(forward);
-  task::sleep(1500);
-  LeftSide.stop();
-  RightSide.stop();
-  Drivetrain.driveFor(fwd, 200, mm);
-  LeftSide.spin(reverse);
-  RightSide.spin(forward);
-  task::sleep(1000);
-  LeftSide.stop();
-  RightSide.stop();
-  motorIntake.spin(forward);
-  task::sleep(2000);
-  LeftSide.spin(forward);
-  RightSide.spin(reverse);
-  task::sleep(1500);
-  LeftSide.stop();
-  RightSide.stop();
-  Drivetrain.driveFor(fwd, 100, mm);
+  LeftSide.spin(reverse, 560, mm, false);
+  RightSide.spin(forward, 560, mm, true);
+  wait(20,msec);
+  Drivetrain.spin(forward, 200, mm); //turns right//
+  motorIntake.spin(reverse);
+  LeftSide.spin(reverse, 160,mm, false);
+  RightSide.spin(forward, 160,mm, true);
+  LeftSide.spin(forward, 200,mm, false);
+  RightSide.spin(reverse, 200,mm, true);
+  motorIntake.stop(braketype::hold);
+  
+  
   //last code is additional, it is mainly to get a better setp when driving starts.
   
 
