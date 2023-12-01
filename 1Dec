@@ -49,18 +49,23 @@ void pre_auton(void) {
 /*  You must modify the code to add your own robot specific commands here.   */
 /*---------------------------------------------------------------------------*/
 void autonomous(void) {
-
+  while(true){
+  //0.8mm per degree
   Drivetrain.setDriveVelocity(40,pct);
-  LeftSide.spin(reverse, 560, mm, false);
-  RightSide.spin(forward, 560, mm, true);
+  LeftSide.spin(reverse, 800, degrees, false);
+  RightSide.spin(forward, 800, degrees, true);
   wait(20,msec);
-  Drivetrain.spin(forward, 200, mm); //turns right//
+  //second chunk
+  Drivetrain.spin(forward, 250, degrees); 
   motorIntake.spin(reverse);
-  LeftSide.spin(reverse, 160,mm, false);
-  RightSide.spin(forward, 160,mm, true);
-  LeftSide.spin(forward, 200,mm, false);
-  RightSide.spin(reverse, 200,mm, true);
+  //third chunk
+  LeftSide.spin(reverse, 200, degrees, false);
+  RightSide.spin(forward, 200, degrees, true);
+  //fourth chunk
+  LeftSide.spin(forward, 250, degrees, false);
+  RightSide.spin(reverse, 250, degrees, true);
   motorIntake.stop(braketype::hold);
+  }
   
   
   //last code is additional, it is mainly to get a better setp when driving starts.
