@@ -1,0 +1,161 @@
+/*----------------------------------------------------------------------------*/
+ /*----------------------------------------------------------------------------*/
+/*                                                                            */
+/*    Module:       main.cpp                                                  */
+/*    Author:       20901                                                     */
+/*    Created:      11/10/2023, 3:06:18 PM                                    */
+/*    Description:  V5 project                                                */
+/*                                                                            */
+/*----------------------------------------------------------------------------*/
+#include "vex.h"
+using namespace vex;
+// A global instance of competition
+competition Competition;
+vex::brain                 Brain;
+double Turn = 0;
+double Power = 0;
+// define your global instances of motors and other devices here
+controller Controller1 = controller(controllerType::primary);
+motor motorleftFrM = motor(PORT16);
+motor motorleftBkM = motor(PORT18);
+motor motorrightFrM = motor(PORT6);
+motor motorrightBkM = motor(PORT8);
+motor motorIntake = motor(PORT2);
+motor motorWing = motor(PORT_);
+motor motorWingtwo = motor(PORT_);
+motor motorCata = motor(PORT10, ratio36_1, true);
+motor motorCatatwo = motor(PORT15, ratio36_1, false);
+motor_group LeftSide = motor_group(motorleftFrM,motorleftBkM);
+motor_group RightSide = motor_group(motorrightFrM,motorrightBkM);
+motor_group Catapult = motor_group(motorCatatwo, motorCata);
+motor_group Wings = motor_group(motorWing, motorWingtwo);
+drivetrain Drivetrain = drivetrain(LeftSide, RightSide);
+pneumatics Blocker = pneumatics(Brain.ThreeWirePort.A);
+/*---------------------------------------------------------------------------*/
+/*                          Pre-Autonomous Functions                         */
+/*                                                                           */
+/*  You may want to perform some actions before the competition starts.      */
+/*  Do them in the following function.  You must return from this function   */
+/*  or the autonomous and usercontrol tasks will not be started.  This       */
+/*  function is only called once after the V5 has been powered on and        */
+/*  not every time that the robot is disabled.                               */
+/*---------------------------------------------------------------------------*/
+void pre_auton(void) {
+  
+}
+/*---------------------------------------------------------------------------*/
+/*                                                                           */
+/*                              Autonomous Task                              */
+/*                                                                           */
+/*  This task is used to control your robot during the autonomous phase of   */
+/*  a VEX Competition.                                                       */
+/*                                                                           */
+/*  You must modify the code to add your own robot specific commands here.   */
+/*---------------------------------------------------------------------------*/
+void autonomous(void) {
+ //0.8mm per degree
+  Drivetrain.setDriveVelocity(40,pct);
+  LeftSide.spinFor(reverse, 800, degrees, false);
+  RightSide.spinFor(forward, 800, degrees, true);
+  //second chunk
+  Drivetrain.driveFor(forward, 180, mm, true); 
+  motorIntake.spin(forward);
+  //third chunk
+  task::sleep(2000);
+  LeftSide.spinFor(forward, 400, degrees, false);
+  RightSide.spinFor(reverse, 400, degrees, true);
+  //fourth chunk
+  Drivetrain.driveFor(forward, 350, mm, true); 
+  task::sleep(2000);
+  LeftSide.setVelocity(70, pct);
+  RightSide.setVelocity(70, pct);
+  LeftSide.spinFor(forward, 800, degrees, false);
+  RightSide.spinFor(reverse, 800, degrees, true);
+  motorIntake.setStopping(hold);
+
+  
+  
+}
+int pneu() {
+return 0;
+}
+
+void onevent_Controller1ButtonX_pressed_0(){
+  Blocker.close();
+}
+
+void onevent_Controller1ButtonB_pressed_0(){
+  Blocker.open();
+}
+
+void usercontrol(void) {
+  LeftSide.setMaxTorque(100,pct);
+  RightSide.setMaxTorque(100,pct);
+  // User control code here, inside the loop
+  while (1) {
+    if ((abs(Controller1.Axis1.value())> 15)){
+      Turn = -Controller1.Axis1.value()/20;
+    }
+    else 
+      Turn = 0;
+    if ((abs(Controller1.Axis3.value())> 15)){
+      Power = -Controller1.Axis3.value()/11;
+    }
+    else{
+        Power = 0;
+    }
+     
+    
+    double Left = Turn + Power;
+    double Right = Turn - Power;
+    LeftSide.spin(fwd,Left,vex::voltageUnits::volt);
+    RightSide.spin(fwd,Right,vex::voltageUnits::volt);
+
+    if (Controller1.ButtonL1.pressing()){
+      Catapult.spin(reverse, 35, pct);
+    }
+    else
+      Catapult.stop(brakeType::hold);
+    
+    
+    if (Controller1.ButtonR1.pressing()){
+      motorIntake.spin(reverse, 70, pct);
+    }
+    else if (Controller1.ButtonR2.pressing()){
+        motorIntake.spin(fwd, 70, pct);
+    }
+    else
+      motorIntake.stop(brakeType::hold);
+    
+
+    if (Controller1.ButtonUp.pressing()){
+      Wings.spinFor(forward, 90, degrees, false);
+    }
+    else if (Controller1.ButtonDown.pressing()){
+        Wings.spinFor(reverse, 90, degrees, true);
+    }
+    else
+      Wings.stop(brakeType::hold);
+    
+    //Do not remove wait->Prevent overuse of CPU
+    Controller1.ButtonX.pressed(onevent_Controller1ButtonX_pressed_0);
+    Controller1.ButtonB.pressed(onevent_Controller1ButtonB_pressed_0);
+    wait(20, msec);
+    pneu();
+  }
+}
+//
+// Main will set up the competition functions and callbacks.
+//
+int main() {
+  
+  Competition.autonomous(autonomous);
+  Competition.drivercontrol(usercontrol);
+  // Run pre-auton
+  pre_auton();
+  
+  // Prevent main from exiting with an infinite loop.
+  while (true) {
+    wait(100, msec);
+  }
+}
