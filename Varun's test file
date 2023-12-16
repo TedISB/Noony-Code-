@@ -1,0 +1,11 @@
+        while (RightWingV == 0)
+        {
+          if(Controller1.ButtonR2.pressing()) {
+            Motor6.spinFor(forward,50,degrees);
+            wait(1500,msec);
+            RightWingV = 1;
+            Brain.Screen.clearScreen();
+            Brain.Screen.print(RightWingV);
+        
+        }
+        }
