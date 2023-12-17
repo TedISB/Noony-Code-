@@ -1,0 +1,60 @@
+float error;
+float output;
+
+
+
+void GyroTurn(double TurnHeading, double TurnVelocity, double Momentum){ 
+  if (TurnHeading > Inertial10.rotation(degrees)) {
+    while (TurnHeading - Momentum > Inertial10.rotation(degrees));
+    {
+     RightDriveSmart.setVelocity(TurnVelocity,pct);
+     LeftDriveSmart.setVelocity(TurnVelocity,pct); 
+     RightDriveSmart.spin(forward);
+     LeftDriveSmart.spin(reverse);
+    }
+    
+
+  } else {
+    while (TurnHeading - Momentum < Inertial10.rotation(degrees));
+    {
+     RightDriveSmart.setVelocity(TurnVelocity,pct);
+     LeftDriveSmart.setVelocity(TurnVelocity,pct); 
+     RightDriveSmart.spin(reverse);
+     LeftDriveSmart.spin(forward);
+    }
+}
+RightDriveSmart.stop();
+LeftDriveSmart.stop();
+}
+
+
+
+
+void Pstaight(double distance,double heading, double velocity, double KP) {
+  RightDriveSmart.setPosition(0.0,degrees);
+  LeftDriveSmart.setPosition(0.0,degrees);
+  if (velocity > 0) {
+    while (RightDriveSmart.position(degrees) < distance);
+    {error = heading - Inertial10.rotation(degrees);
+     output = error * KP;
+     RightDriveSmart.setVelocity(velocity - output, pct);
+     LeftDriveSmart.setVelocity(velocity + output, pct); 
+     RightDriveSmart.spin(forward);
+     LeftDriveSmart.spin(forward);
+    }
+    
+
+  } else {
+    while (RightDriveSmart.position(degrees) > distance);
+    {error = heading - Inertial10.rotation(degrees);
+     output = error * KP;
+     RightDriveSmart.setVelocity(velocity - output, pct);
+     LeftDriveSmart.setVelocity(velocity + output, pct); 
+     RightDriveSmart.spin(forward);
+     LeftDriveSmart.spin(forward);
+
+  }
+}
+RightDriveSmart.stop();
+LeftDriveSmart.stop();
+}
