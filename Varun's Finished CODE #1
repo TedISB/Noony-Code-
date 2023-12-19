@@ -28,6 +28,7 @@ motor Motor6 = motor(PORT8,ratio6_1,false);
 pneumatics RWINGS = pneumatics(Brain.ThreeWirePort.A);
 pneumatics LWINGS = pneumatics(Brain.ThreeWirePort.B);
 pneumatics blocker = pneumatics(Brain.ThreeWirePort.C);
+pneumatics Elavation = pneumatics(Brain.ThreeWirePort.D); 
 inertial Inertial10 = inertial(PORT11);
 // VEXcode generated functions
 // define variable for remote controller enable/disable
@@ -192,6 +193,7 @@ wait(100,msec);
 float RightWingV;
 float LeftWingV;
 float BlockerV;
+float ElavationV;
 bool RightWingBool;
 bool leftWingBool;
 bool BlockerBool;
@@ -261,7 +263,7 @@ void usercontrol(void) {
         if (Controller1.ButtonL2.pressing()) {
          LWINGS.open();
          wait(1.0, seconds);
-         RightWingV = 1.0;
+         LeftWingV = 1.0;
         }
         wait(20, msec);
         }
@@ -269,7 +271,7 @@ void usercontrol(void) {
          if (Controller1.ButtonL2.pressing()) {
          LWINGS.close();
         wait(1.0, seconds);
-        RightWingV = 0.0;
+        LeftWingV = 0.0;
              
         }
         wait(20, msec);
@@ -278,7 +280,7 @@ void usercontrol(void) {
         if (Controller1.ButtonUp.pressing()) {
          blocker.open();
          wait(1.0, seconds);
-         RightWingV = 1.0;
+         BlockerV = 1.0;
         }
         wait(20, msec);
         }
@@ -286,7 +288,24 @@ void usercontrol(void) {
          if (Controller1.ButtonUp.pressing()) {
          blocker.close();
         wait(1.0, seconds);
-        RightWingV = 0.0;
+        BlockerV = 0.0;
+             
+        }
+        wait(20, msec);
+        }
+        while ((ElavationV == 0.0)) {
+        if (Controller1.ButtonRight.pressing()) {
+         blocker.open();
+         wait(1.0, seconds);
+         ElavationV  = 1.0;
+        }
+        wait(20, msec);
+        }
+        while ((ElavationV== 1.0)) {
+         if (Controller1.ButtonRight.pressing()) {
+         blocker.close();
+        wait(1.0, seconds);
+        ElavationV  = 0.0;
              
         }
         wait(20, msec);
