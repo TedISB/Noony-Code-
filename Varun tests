@@ -1,0 +1,407 @@
+/*----------------------------------------------------------------------------*/
+ /*----------------------------------------------------------------------------*/
+/*                                                                            */
+/*    Module:       main.cpp                                                  */
+/*    Author:       20901                                                     */
+/*    Created:      11/10/2023, 3:06:18 PM                                    */
+/*    Description:  V5 project                                                */
+/*                                                                            */
+/*----------------------------------------------------------------------------*/
+#include "vex.h"
+using namespace vex;
+// A global instance of competition
+competition Competition;
+vex::brain                 Brain;
+// VEXcode device constructors
+motor leftMotorFront = motor(PORT1, ratio6_1, false);
+motor leftMotorMID = motor(PORT2, ratio6_1, false);
+motor leftMotorBack = motor(PORT3, ratio6_1,false);
+motor_group LeftDriveSmart = motor_group(leftMotorFront,leftMotorBack);
+motor rightMotorFront = motor(PORT4, ratio6_1, true);
+motor rightMotorMID = motor(PORT5, ratio6_1, true);
+motor rightMotorBack = motor(PORT6, ratio6_1,true);
+motor_group RightDriveSmart = motor_group(rightMotorFront,rightMotorBack);
+drivetrain Drivetrain = drivetrain(LeftDriveSmart, RightDriveSmart, 319.19, 295, 40, mm, 1);
+controller Controller1 = controller(primary);
+motor Motor5 = motor(PORT7, ratio6_1, false);
+motor Motor6 = motor(PORT8,ratio6_1,false);
+pneumatics RWINGS = pneumatics(Brain.ThreeWirePort.A);
+pneumatics LWINGS = pneumatics(Brain.ThreeWirePort.B);
+pneumatics LeftFrontWings = pneumatics(Brain.ThreeWirePort.C);
+pneumatics RightFrontWings = pneumatics(Brain.ThreeWirePort.C);
+pneumatics PTO = pneumatics(Brain.ThreeWirePort.D); 
+inertial Inertial10 = inertial(PORT11);
+// VEXcode generated functions
+// define variable for remote controller enable/disable
+bool RemoteControlCodeEnabled = true;
+// define variables used for controlling motors based on controller inputs
+bool DrivetrainLNeedsToBeStopped_Controller1 = true;
+bool DrivetrainRNeedsToBeStopped_Controller1 = true;
+/**
+ * Used to initialize code/tasks/devices added using tools in VEXcode Pro.
+ * 
+ * This should be called at the start of your int main function.
+ */
+void vexcodeInit( void ) {
+}
+
+// define your global instances of motors and other devices here
+
+/*---------------------------------------------------------------------------*/
+/*                          Pre-Autonomous Functions                         */
+/*                                                                           */
+/*  You may want to perform some actions before the competition starts.      */
+/*  Do them in the following function.  You must return from this function   */
+/*  or the autonomous and usercontrol tasks will not be started.  This       */
+/*  function is only called once after the V5 has been powered on and        */
+/*  not every time that the robot is disabled.                               */
+/*---------------------------------------------------------------------------*/
+
+void pre_auton(void) {
+
+  // All activities that occur before the competition starts
+  // Example: clearing encoders, setting servo positions, ...
+}
+
+float error;
+float output;
+
+
+
+void GyroTurn(double TurnHeading, double TurnVelocity, double Momentum){ 
+  if (TurnHeading > Inertial10.rotation(degrees)) {
+    while (TurnHeading - Momentum > Inertial10.rotation(degrees));
+    {
+     RightDriveSmart.setVelocity(TurnVelocity,pct);
+     rightMotorMID.setVelocity(TurnVelocity,pct);
+     LeftDriveSmart.setVelocity(TurnVelocity,pct); 
+     leftMotorMID.setVelocity(TurnVelocity,pct);
+     RightDriveSmart.spin(forward);
+     rightMotorMID.spin(reverse);
+     LeftDriveSmart.spin(reverse);
+     leftMotorMID.spin(forward);
+    }
+    
+
+  } else {
+    while (TurnHeading - Momentum < Inertial10.rotation(degrees));
+    {
+     RightDriveSmart.setVelocity(TurnVelocity,pct);
+     rightMotorMID.setVelocity(TurnVelocity,pct);
+     LeftDriveSmart.setVelocity(TurnVelocity,pct); 
+     leftMotorMID.setVelocity(TurnVelocity,pct);
+     RightDriveSmart.spin(reverse);
+     rightMotorMID.spin(forward);
+     LeftDriveSmart.spin(forward);
+     leftMotorMID.spin(reverse);
+    }
+}
+RightDriveSmart.stop();
+LeftDriveSmart.stop();
+rightMotorMID.stop();
+leftMotorMID.stop();
+}
+
+
+
+
+void Pstaight(double distance,double heading, double velocity, double KP) {
+  leftMotorFront.setPosition(0.0,degrees);
+  leftMotorMID.setPosition(0.0,degrees);
+  leftMotorBack.setPosition(0.0,degrees);
+  rightMotorFront.setPosition(0.0,degrees); 
+  rightMotorMID.setPosition(0.0,degrees);
+  rightMotorBack.setPosition(0.0,degrees);
+  if (velocity > 0) {
+    while (((rightMotorFront.position(degrees) + rightMotorMID.position(degrees)+rightMotorBack.position(degrees))/3) < distance);
+    {error = heading - Inertial10.rotation(degrees);
+     output = error * KP;
+     RightDriveSmart.setVelocity(velocity - output, pct);
+     rightMotorMID.setVelocity(velocity - output, pct);
+     LeftDriveSmart.setVelocity(velocity + output, pct); 
+     leftMotorMID.setVelocity(velocity + output,pct);
+     RightDriveSmart.spin(forward);
+     rightMotorMID.spin(reverse);
+     LeftDriveSmart.spin(forward);
+     leftMotorMID.spin(reverse);
+    }
+    
+
+  } else {
+    while (((rightMotorFront.position(degrees) + rightMotorMID.position(degrees)+rightMotorBack.position(degrees))/3) > distance);
+    {error = heading - Inertial10.rotation(degrees);
+     output = error * KP;
+    RightDriveSmart.setVelocity(velocity + output, pct);
+     rightMotorMID.setVelocity(velocity + output, pct);
+     LeftDriveSmart.setVelocity(velocity - output, pct); 
+     leftMotorMID.setVelocity(velocity - output,pct);
+     RightDriveSmart.spin(forward);
+     rightMotorMID.spin(reverse);
+     LeftDriveSmart.spin(forward);
+     leftMotorMID.spin(reverse);
+  }
+}
+RightDriveSmart.stop();
+LeftDriveSmart.stop();
+rightMotorMID.stop();
+leftMotorMID.stop();
+}
+
+
+
+void autonomous(void) {
+Inertial10.calibrate();
+wait(1000,msec);
+Pstaight(100,0,100,4);  
+wait(100,msec);
+Motor5.spin(forward,50,pct);
+wait(1000,msec);
+Motor5.stop();
+GyroTurn(45,100,3);
+wait(100,msec);
+Pstaight(300,45,100,4);  
+wait(100,msec);
+Pstaight(-200,45,100,4);  
+wait(100,msec);
+Pstaight(200,45,100,4);  
+wait(100,msec);
+Pstaight(300,45,100,4);  
+wait(100,msec);
+GyroTurn(90,100,3);
+wait(100,msec);
+Pstaight(2125,90,100,4);  
+wait(100,msec);
+Motor5.spin(reverse,100,pct);
+wait(1000,msec);
+Motor5.stop();
+GyroTurn(315,100,3);
+wait(100,msec);
+Pstaight(600,315,100,4);  
+wait(100,msec);
+Motor5.spin(forward,100,pct);
+wait(1000,msec);
+Motor5.stop();
+Pstaight(300,315,100,4);  
+wait(100,msec);
+Pstaight(-300,315,100,4);  
+wait(100,msec);
+Pstaight(300,315,100,4);  
+wait(100,msec);
+Pstaight(-300,315,100,4);  
+wait(100,msec);
+GyroTurn(225,100,3);
+wait(100,msec);
+Pstaight(1600,225,100,4);  
+wait(100,msec);
+GyroTurn(135,100,3);
+wait(100,msec);
+Pstaight(900,135,100,4);  
+wait(100,msec); 
+  // ..........................................................................
+  // Insert autonomous user code here.
+  // ..........................................................................
+}
+//drivetrain with wings 
+//intake 
+//blocker
+//elvation
+//flywheel
+//
+/*---------------------------------------------------------------------------*/
+/*                                                                           */
+/*                              User Control Task                            */
+/*                                                                           */
+/*  This task is used to control your robot during the user control phase of */
+/*  a VEX Competition.                                                       */
+/*                                                                           */
+/*  You must modify the code to add your own robot specific commands here.   */
+/*---------------------------------------------------------------------------*/
+
+float RightWingV;
+float LeftWingV;
+float RightFrontWingsV;
+float LeftFrontWingsV;
+float PTOV;
+bool RightWingBool;
+bool leftWingBool;
+bool BlockerBool;
+int pneu() {
+  return 0; 
+}
+
+
+
+
+
+
+void usercontrol(void) {
+   RightWingV = 0.0;
+   LeftWingV = 0.0;
+   LeftFrontWingsV = 0.0;
+   RightFrontWingsV = 0.0;
+   PTOV = 0.0;
+   
+   
+   leftMotorFront.spin(forward);
+   leftMotorMID.spin(reverse);
+   leftMotorBack.spin(forward);
+   rightMotorFront.spin(forward); 
+   rightMotorMID.spin(reverse); 
+   rightMotorBack.spin(forward);
+
+  // User control code here, inside the loop
+   while (true) {
+        double LeftSpeed = Controller1.Axis3.position() - Controller1.Axis1.position();
+        double RightSpeed = Controller1.Axis3.position() + Controller1.Axis1.position();
+        double MidLeftSpeed = Controller1.Axis3.position() + Controller1.Axis1.position();
+        double MidRightSpeed = Controller1.Axis3.position() - Controller1.Axis1.position();
+        leftMotorFront.setVelocity( LeftSpeed, percent);
+        leftMotorMID.setVelocity(MidLeftSpeed,percent);
+        leftMotorBack.setVelocity(LeftSpeed, percent); 
+        rightMotorFront.setVelocity( RightSpeed, percent);
+        rightMotorMID.setVelocity(MidRightSpeed,percent);
+        rightMotorBack.setVelocity( RightSpeed, percent);   
+
+      //   if(Controller1.ButtonR1.pressing()) {//output
+      //     Motor5.spin(forward,100,pct);
+      //   } else if (Controller1.ButtonL1.pressing()){//intake                               
+      //     Motor5.spin(reverse,100,pct);
+      //   }else {
+      //     Motor5.stop();
+      //   }
+       
+      //  while ((PTOV == 0.0)) {
+      //   if(Controller1.ButtonX.pressing()) {//output
+      //     Motor6.spin(forward,60,pct);
+      //   } else if (Controller1.ButtonY.pressing()){//intake                               
+      //     Motor6.spin(reverse,60,pct);
+      //   }else {
+      //     Motor6.stop();
+      //   }
+      //  }
+      
+      //  while ((PTOV == 1.0)) {
+      //   if(Controller1.ButtonX.pressing()) {//output
+      //     Motor6.spin(forward,100,pct);
+      //   } else if (Controller1.ButtonY.pressing()){//intake                               
+      //     Motor6.spin(reverse,100,pct);
+      //   }else {
+      //     Motor6.stop();
+      //   }
+      //   }
+
+
+        
+
+
+
+           
+    
+
+      //   while ((RightWingV == 0.0)) {
+      //   if (Controller1.ButtonR2.pressing()) {
+      //    RWINGS.open();
+      //    wait(1.0, seconds);
+      //    RightWingV = 1.0;
+      //   }
+      //   wait(20, msec);
+      //   }
+      //   while ((RightWingV == 1.0)) {
+      //    if (Controller1.ButtonR2.pressing()) {
+      //    RWINGS.close();
+      //    wait(1.0, seconds);
+      //    RightWingV = 0.0;
+             
+      //   }
+      //   wait(20, msec);
+      //   }
+      //   while ((LeftWingV == 0.0)) {
+      //   if (Controller1.ButtonL2.pressing()) {
+      //    LWINGS.open();
+      //    wait(1.0, seconds);
+      //    LeftWingV = 1.0;
+      //   }
+      //   wait(20, msec);
+      //   }
+      //   while ((LeftWingV == 1.0)) {
+      //    if (Controller1.ButtonL2.pressing()) {
+      //    LWINGS.close();
+      //   wait(1.0, seconds);
+      //   LeftWingV = 0.0;
+             
+      //   }
+      //   wait(20, msec);
+      //   }
+      //   while ((PTOV == 0.0)) {
+      //   if (Controller1.ButtonUp.pressing()) {
+      //     Motor6.spinFor(forward,1,deg);
+      //    PTO.open();
+      //    wait(1.0, seconds);
+      //    PTOV = 1.0;
+      //   }
+      //   wait(20, msec);
+      //   }
+      //   while ((PTOV == 1.0)) {
+      //    if (Controller1.ButtonUp.pressing()) {
+      //   Motor6.spinFor(forward,1,deg);
+      //    PTO.close();
+      //   wait(1.0, seconds);
+      //   PTOV = 0.0;
+             
+      //   }
+      //   wait(20, msec);
+      //   }
+      //   while ((LeftFrontWingsV == 0.0)) {
+      //   if (Controller1.ButtonRight.pressing()) {
+      //    LeftFrontWings.open();
+      //    wait(1.0, seconds);
+      //   LeftFrontWingsV = 1.0;
+      //   }
+      //   wait(20, msec);
+      //   }
+      //   while ((LeftFrontWingsV == 1.0)) {
+      //    if (Controller1.ButtonRight.pressing()) {
+      //    LeftFrontWings.close();
+      //   wait(1.0, seconds);
+      //   LeftFrontWingsV = 0.0;
+             
+      //   }
+      //   wait(20, msec);
+      //   }
+      //   while ((RightFrontWingsV == 0.0)) {
+      //   if (Controller1.ButtonRight.pressing()) {
+      //    RightFrontWings.open();
+      //    wait(1.0, seconds);
+      //   RightFrontWingsV = 1.0;
+      //   }
+      //   wait(20, msec);
+      //   }
+      //   while ((RightFrontWingsV == 1.0)) {
+      //    if (Controller1.ButtonRight.pressing()) {
+      //    RightFrontWings.close();
+      //   wait(1.0, seconds);
+      //  RightFrontWingsV = 0.0;
+             
+      //   }
+      //   wait(20, msec);
+      //   }
+        this_thread::sleep_for(10);   
+  }
+}
+
+//
+// Main will set up the competition functions and callbacks.
+//
+int main() {
+  // Set up callbacks for autonomous and driver control periods.
+  Competition.autonomous(autonomous);
+  Competition.drivercontrol(usercontrol);
+
+  // Run the pre-autonomous function.
+  pre_auton();
+
+  // Prevent main from exiting with an infinite loop.
+  while (true) {
+    wait(100, msec);
+  }
+}
