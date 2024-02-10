@@ -1,0 +1,175 @@
+void autonomous(void) {
+  thread PIDThread = thread(PID);
+  autonwinpointOFF();
+  autonwinpointdef();
+  TeamA();
+ 
+
+
+
+
+  // ..........................................................................
+  // Insert autonomous user code here.
+  // ..........................................................................
+} 
+void autonwinpointOFF(){
+  // LaderalSpeed = 0.1;
+  // desiredTurnValue = 135;
+  // wait(1500,msec);
+  // desiredValue = -2000;
+  // wait(1500,msec);
+  // desiredTurnValue = 90;
+  // wait(1500,msec);
+  // desiredValue = -4000;
+  // wait(1500,msec);
+  // desiredValue = -2000;
+  // wait(1500,msec);
+  // desiredTurnValue = 135;
+  // wait(1500,msec);
+  // desiredValue = 0;
+  // wait(1500,msec);
+  // desiredTurnValue = 180;
+  // wait(1500,msec);
+  // desiredValue = 3500;
+  // wait(1500,msec);
+  // desiredValue = 4600;
+ 
+}
+void autonwinpointdef(){
+ // LaderalSpeed = 0.1;
+  // desiredTurnValue = 45;
+  // wait(1500,msec);
+  // desiredValue = -2000;
+  // wait(1500,msec);
+  // desiredTurnValue = 90;
+  // wait(1500,msec);
+  // desiredValue = -4000;
+  // wait(1500,msec);
+  // desiredValue = -2000;
+  // wait(1500,msec);
+  // desiredTurnValue = 45;
+  // wait(1500,msec);
+  // desiredValue = 0;
+  // wait(1500,msec);
+  // desiredTurnValue = 180;
+  // wait(1500,msec);
+  // desiredValue = -3500;
+  // wait(1500,msec);
+  // desiredValue = -4500;
+}
+void TeamA(){
+  LaderalSpeed = 0.1;
+  desiredTurnValue = 6;
+  wait(1000,msec);
+  Motor5.spin(forward,100,pct);
+  desiredValue = 6500;
+  wait(1500,msec);
+  desiredTurnValue = 25;
+  wait(1000,msec);
+  desiredValue = 500;
+  wait(1000,msec);
+  desiredTurnValue = 135;
+  wait(1000,msec);
+  desiredValue = -3500;
+   Motor5.spin(reverse,100,pct);
+  wait(200,msec);
+  desiredTurnValue = 180;
+  // wait(200,msec);
+  // desiredValue = -1500;
+  //  wait(200,msec);
+  // desiredValue = -1000;
+  // wait(200,msec);
+  // desiredTurnValue = 135;
+  // wait(200,msec);
+  // desiredValue = 1000;
+  // wait(200,msec);
+  // desiredTurnValue = 90;
+  // wait(200,msec);
+  // desiredValue = 3000;
+  // wait(200,msec);
+  // desiredValue = 5500;
+}
+void RiskyautonwinpointOFF(){
+LaderalSpeed = 0.1; 
+
+desiredTurnValue = 0.1;
+Motor5.spin(forward,100,pct);
+desiredValue = -4500;
+wait(1000,msec);
+desiredTurnValue = 315;
+wait(1000,msec);
+desiredValue = -6500;
+wait(1000,msec);
+desiredTurnValue = 135;
+wait(1000,msec);
+Motor5.spin(reverse,100,pct);
+wait(250,msec);
+desiredTurnValue = 270;
+wait(1000,msec);
+desiredValue = -8500;
+wait(1000,msec);
+desiredValue = -6500;
+wait(1000,msec);
+desiredTurnValue = 5;
+wait(500,msec);
+Motor5.spin(forward,100,pct);
+desiredValue = -1500;
+wait(1000,msec);
+desiredTurnValue = 135;
+wait(1000,msec);
+desiredValue = -1000;
+Motor5.spin(reverse,100,pct);
+wait(1000,msec);
+desiredTurnValue = 45;
+Motor5.spin(forward,100,pct);
+wait(1000,msec);
+desiredValue = 0;
+wait(500,msec);
+desiredTurnValue = 180;
+wait(750,msec);
+Motor5.spin(reverse,100,pct);
+desiredValue = 3500;
+wait(750,msec);
+desiredTurnValue = 135;
+wait(750,msec);
+desiredValue = 0;
+wait(600,msec);
+desiredTurnValue = 180;
+
+}
+
+void Riskyautonwinpointdef(){
+  LaderalSpeed = 0.1;
+  desiredTurnValue = 6;
+  wait(1000,msec);
+  Motor5.spin(forward,100,pct);
+  desiredValue = 6500;
+  wait(1500,msec);
+  desiredTurnValue = 90;
+  wait(1000,msec);
+  desiredValue = 8000;
+  wait(1000,msec);
+  Motor5.spin(reverse,100,pct);
+  wait(300,msec);
+  desiredTurnValue = 45;
+  wait(1000,msec);
+  desiredValue = 3000;
+  wait(1000,msec);
+  desiredTurnValue = 135;
+  wait(1000,msec);
+  desiredValue = -1000;
+  wait(500,msec);
+  desiredTurnValue = 180;
+  wait(1000,msec);
+  desiredValue = -2000;
+  wait(1000,msec);
+  desiredTurnValue = 315;
+  wait(1000,msec);
+  desiredValue = -4000;
+  desiredValue = -5000;
+  wait(1000,msec);
+  desiredTurnValue = 270;
+  desiredValue = -9500;
+
+
+}
