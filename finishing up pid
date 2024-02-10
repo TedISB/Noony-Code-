@@ -1,0 +1,510 @@
+/*----------------------------------------------------------------------------*/
+ /*----------------------------------------------------------------------------*/
+/*                                                                            */
+/*    Module:       main.cpp                                                  */
+/*    Author:       20901                                                     */
+/*    Created:      11/10/2023, 3:06:18 PM                                    */
+/*    Description:  V5 project                                                */
+/*                                                                            */
+/*----------------------------------------------------------------------------*/
+#include "vex.h"
+using namespace vex;
+// A global instance of competition
+competition Competition;
+vex::brain                 Brain;
+// VEXcode device constructors
+motor leftMotorFront = motor(PORT1, ratio6_1, false);
+motor leftMotorMID = motor(PORT2, ratio6_1, false);
+motor leftMotorBack = motor(PORT3, ratio6_1,false);
+motor_group LeftDriveSmart = motor_group(leftMotorFront,leftMotorBack);
+motor rightMotorFront = motor(PORT4, ratio6_1, true);
+motor rightMotorMID = motor(PORT5, ratio6_1, true);
+motor rightMotorBack = motor(PORT6, ratio6_1,true);
+motor_group RightDriveSmart = motor_group(rightMotorFront,rightMotorBack);
+drivetrain Drivetrain = drivetrain(LeftDriveSmart, RightDriveSmart, 319.19, 295, 40, mm, 1);
+controller Controller1 = controller(primary);
+motor Motor5 = motor(PORT7, ratio6_1, false);
+motor Motor6 = motor(PORT8,ratio6_1,false);
+pneumatics RWINGS = pneumatics(Brain.ThreeWirePort.C);
+pneumatics LWINGS = pneumatics(Brain.ThreeWirePort.B);
+pneumatics FrontFrontWings = pneumatics(Brain.ThreeWirePort.A);
+pneumatics PTO = pneumatics(Brain.ThreeWirePort.E); 
+inertial heading1 = inertial(PORT11); 
+inertial heading2 = inertial(PORT15);
+distance CatapultDis = distance(PORT14);
+// VEXcode generated functions
+// define variable for remote controller enable/disable
+bool RemoteControlCodeEnabled = true;
+// define variables used for controlling motors based on controller inputs
+bool DrivetrainLNeedsToBeStopped_Controller1 = true;
+bool DrivetrainRNeedsToBeStopped_Controller1 = true;
+/**
+ * Used to initialize code/tasks/devices added using tools in VEXcode Pro.
+ * 
+ * This should be called at the start of your int main function.
+ */
+void vexcodeInit( void ) {
+}
+
+// define your global instances of motors and other devices here
+
+/*---------------------------------------------------------------------------*/
+/*                          Pre-Autonomous Functions                         */
+/*                                                                           */
+/*  You may want to perform some actions before the competition starts.      */
+/*  Do them in the following function.  You must return from this function   */
+/*  or the autonomous and usercontrol tasks will not be started.  This       */
+/*  function is only called once after the V5 has been powered on and        */
+/*  not every time that the robot is disabled.                               */
+/*---------------------------------------------------------------------------*/
+
+void pre_auton(void) {
+  heading1.calibrate();
+  heading2.calibrate();
+  wait(3,sec);
+  leftMotorFront.setPosition(0.0,degrees);
+  leftMotorMID.setPosition(0.0,degrees);
+  leftMotorBack.setPosition(0.0,degrees);
+  rightMotorBack.setPosition(0.0,degrees);
+  rightMotorFront.setPosition(0.0,degrees);
+  rightMotorMID.setPosition(0.0,degrees);
+  Motor6.setPosition(0.0,degrees);
+
+
+  // All activities that occur before the competition starts
+  // Example: clearing encoders, setting servo positions, ...
+}
+double AverageHeading;
+double dpr = 319.278; //Distance per rotation, need to test numbers, also should be in mm, because else it would break resulting in Robot Position Fault
+//PID Settings and Variables
+bool enablePID = true;
+bool resetEncoders = false;
+
+float kP = 0.5;   //0.5 might be better // or 0.25
+float kI = 0.0; //0.00025 might be better // or 0.00125
+float kD = 0.0; //0.005 might be better //or 0.0025
+float turnkP = 0.4; // 0.1 is really nice, at least for only P values and no intertial 
+                  //0.5 or 0.6 seems to work for only P values with intertial but you need to add +1 to your angle
+                  //2 also work for intertial for turning
+float turnkI = 0.00; 
+float turnkD = 0.225; //might be better to have this low so that it does zig zag when driving straight (worth testing though)
+
+float desiredValue = 0;
+int desiredTurnValue = 0;
+
+int error; //Desired Value - Sensor Value: Position
+int prevError = 0; //Position 20ms ago
+int derivative; // error - prevError : Speed
+int totalError = 0; // totalError += error : Integral 
+
+int turnError; //Desired Value - Sensor Value: Position
+int turnPrevError = 0; //Position 20ms ago
+int turnDerivative; // error - prevError : Speed
+int turnTotalError = 0; // totalError += error : Integral 
+
+int maxTurnIntegral = 20; // These cap the integrals
+int maxIntegral = 3000;
+int integralBound = 3; //If error is outside the bounds, then apply the integral. This is a buffer with +-integralBound degrees
+float TurnSpeed = 1;
+float LaderalSpeed = 1;
+
+int PID(){
+  while (enablePID) {
+
+
+    float calculatedDesiredValue = (desiredValue*dpr)/360;
+    // In cm now
+    AverageHeading = (heading1.heading()+heading2.heading())/2;
+    // Get motor positions
+
+ int averageMotorPosition = -(leftMotorFront.position(deg) + rightMotorFront.position(deg)+leftMotorMID.position(deg) + rightMotorMID.position(deg)+leftMotorBack.position(deg) + rightMotorBack.position(deg))/3;
+
+    ///////////////////////////////////
+    // Lateral Movement PID
+    ///////////////////////////////////
+
+    // Potential 
+    error = calculatedDesiredValue + averageMotorPosition; //may need to flip
+    // pidError =  pidRequestedValue - pidSensorCurrentValue;
+
+    // Derivative 
+    derivative =  error + prevError; //may need to flip
+
+    // Velocity -> Position -> Absement // Integral
+    // Integral
+    if(abs(error) < integralBound){
+    totalError+=error; 
+    }  else {
+      totalError = 0; 
+    }
+    //totalError += error;
+
+    //This would cap the integral
+    totalError = abs(totalError) > maxIntegral ? -1*(totalError) * maxIntegral : totalError;
+
+    // Calculate motor power
+    double lateralMotorPower = ((error * kP) + (derivative * kD) + (totalError * kI))*LaderalSpeed; 
+    //   pidDrive = (pid_Kp * pidError);
+
+    // limit drive
+    if( lateralMotorPower > 100 )
+        lateralMotorPower = 100;
+    if( lateralMotorPower < -100)
+        lateralMotorPower = -100;
+    //////////////////////////////////////////////////////////////////////////
+    // Turning Movement PID
+    //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    // Get average motor positions
+    // double turnDifference = frontLeftMotorPosition - backRightMotorPosition;
+        
+    // Potential 
+    // turnError = desiredTurnValue - turnDifference;
+    turnError = desiredTurnValue - AverageHeading;
+    // pidError =  pidRequestedValue - pidSensorCurrentValue;
+
+    // Derivative 
+    turnDerivative = turnError - turnPrevError;
+
+    // Velocity -> Position -> Absement // Integral
+    //Integral
+    if(abs(turnError) < integralBound){
+    turnTotalError+=error; 
+    }  else {
+      turnTotalError = 0; 
+    }
+    //totalError += error;
+
+    //This would cap the integral
+    turnTotalError = abs(turnTotalError) > maxTurnIntegral ? -1*(turnTotalError) * maxTurnIntegral : turnTotalError;
+
+    // Calculate motor power
+    double turnMotorPower = (-(turnError * turnkP) + (turnDerivative * turnkD) + (turnTotalError * turnkI)) * TurnSpeed;
+
+    // limit drive
+    if( turnMotorPower > 100 )
+        turnMotorPower = 100;
+    if( turnMotorPower < -100 )
+        turnMotorPower = -100;
+    
+    leftMotorFront.spin(forward, lateralMotorPower + turnMotorPower, velocityUnits::pct); // could use voltage
+    leftMotorMID.spin(forward, lateralMotorPower - turnMotorPower, velocityUnits::pct); // could use voltage
+    leftMotorBack.spin(forward, lateralMotorPower + turnMotorPower, velocityUnits::pct); // could use voltage
+    rightMotorFront.spin(forward, lateralMotorPower - turnMotorPower, velocityUnits::pct); // could use voltage
+    rightMotorMID.spin(forward, lateralMotorPower + turnMotorPower, velocityUnits::pct); // could use voltage
+    rightMotorBack.spin(forward, lateralMotorPower - turnMotorPower, velocityUnits::pct); // could use voltage
+    prevError = error;
+    turnPrevError = turnError;
+
+    printf("\n Turn Error %d", turnError);
+    printf("\n Drive Error %d", error);
+    printf("\n Calculated Desired Value %f", calculatedDesiredValue);
+    printf("\n Average Motor Position %d", averageMotorPosition);
+    printf("\n Inertial Sensor %f", heading1.heading() );
+
+    // Don't hog cpu
+    this_thread::sleep_for(20);
+  }
+  while(true){
+    this_thread::sleep_for(100000000);
+  }
+  return 0;
+}
+//Don't look down here there isn't anything down here but suffering :)
+//and Cody's dumb methods XD
+//We're on strike ;p
+bool CataPlutBool;
+int CataPlut(){
+  while (CataPlutBool) {
+   Motor6.setVelocity(100,pct);
+    wait(50,msec);
+    Motor6.spinFor(forward,180,deg);
+
+    
+
+    this_thread::sleep_for(20);
+  }
+  while(true){
+    this_thread::sleep_for(100000000);
+  }
+  return 0;
+}
+
+
+
+
+void autonomous(void) {
+  thread PIDThread = thread(PID);
+  // LaderalSpeed = 0.1;
+  // desiredTurnValue = 45;
+  // wait(1500,msec);
+  // desiredValue = -2000;
+  // wait(1500,msec);
+  // desiredTurnValue = 90;
+  // wait(1500,msec);
+  // desiredValue = -4000;
+  // wait(1500,msec);
+  // desiredValue = -2000;
+  // wait(1500,msec);
+  // desiredTurnValue = 45;
+  // wait(1500,msec);
+  // desiredValue = 0;
+  // wait(1500,msec);
+  // desiredTurnValue = 180;
+  // wait(1500,msec);
+  // desiredValue = -3500;
+  // wait(1500,msec);
+  // desiredValue = -4500;
+  
+
+  // LaderalSpeed = 0.1;
+  // desiredTurnValue = 135;
+  // wait(1500,msec);
+  // desiredValue = -2000;
+  // wait(1500,msec);
+  // desiredTurnValue = 90;
+  // wait(1500,msec);
+  // desiredValue = -4000;
+  // wait(1500,msec);
+  // desiredValue = -2000;
+  // wait(1500,msec);
+  // desiredTurnValue = 135;
+  // wait(1500,msec);
+  // desiredValue = 0;
+  // wait(1500,msec);
+  // desiredTurnValue = 180;
+  // wait(1500,msec);
+  // desiredValue = 3500;
+  // wait(1500,msec);
+  // desiredValue = 4600;
+ 
+  LaderalSpeed = 0.1;
+  desiredTurnValue = 6;
+  wait(1000,msec);
+  Motor5.spin(forward,100,pct);
+  desiredValue = 6500;
+  wait(1500,msec);
+  desiredTurnValue = 25;
+  wait(1000,msec);
+  desiredValue = 500;
+  wait(1000,msec);
+  desiredTurnValue = 135;
+  wait(1000,msec);
+  desiredValue = -3500;
+   Motor5.spin(reverse,100,pct);
+  wait(200,msec);
+  desiredTurnValue = 180;
+  // wait(200,msec);
+  // desiredValue = -1500;
+  //  wait(200,msec);
+  // desiredValue = -1000;
+  // wait(200,msec);
+  // desiredTurnValue = 135;
+  // wait(200,msec);
+  // desiredValue = 1000;
+  // wait(200,msec);
+  // desiredTurnValue = 90;
+  // wait(200,msec);
+  // desiredValue = 3000;
+  // wait(200,msec);
+  // desiredValue = 5500;
+
+
+
+
+
+
+  // ..........................................................................
+  // Insert autonomous user code here.
+  // ..........................................................................
+} 
+
+//drivetrain with wings 
+//intake 
+//blocker
+//elvation
+//flywheel
+//
+/*---------------------------------------------------------------------------*/
+/*                                                                           */
+/*                              User Control Task                            */
+/*                                                                           */
+/*  This task is used to control your robot during the user control phase of */
+/*  a VEX Competition.                                                       */
+/*                                                                           */
+/*  You must modify the code to add your own robot specific commands here.   */
+/*---------------------------------------------------------------------------*/
+
+bool RightWingV;
+bool LeftWingV;
+bool FrontWingsV;
+bool PTOV;
+bool CataV;
+
+int pneu() {
+  return 0; 
+}
+
+void RightWing() {
+  if (RightWingV){
+    RWINGS.open();
+     wait(1000,msec);
+    RightWingV = false;
+
+
+  }
+  else {
+
+  RWINGS.close();
+  wait(1000,msec);
+  RightWingV = true;
+  
+  }
+}
+
+void LeftWing() {
+  if (LeftWingV){
+    LWINGS.open();
+     wait(1000,msec);
+    LeftWingV = false;
+
+
+  }
+  else {
+
+  LWINGS.close();
+  wait(1000,msec);
+  LeftWingV  = true;
+  
+  }
+}  
+
+void FrontWingsButton() {
+  if ( FrontWingsV){
+     FrontFrontWings.open();
+     wait(1000,msec);
+    FrontWingsV = false;
+
+
+  }
+  else {
+
+   FrontFrontWings.close();
+  wait(1000,msec);
+  FrontWingsV = true;
+  
+  }
+}  
+
+
+void PtoButton() {
+  if (PTOV){
+    Motor6.spinFor(2,deg);
+    wait(1000,msec);
+    PTO.open();
+     wait(1000,msec);
+    PTOV = false;
+
+
+  }
+  else {
+    Motor6.spinFor(2,deg);
+    wait(1000,msec);
+    PTO.close();
+     wait(1000,msec);
+    PTOV = true;
+  
+  }
+}
+
+
+
+
+    bool objectDetected ;
+
+
+
+
+void usercontrol(void) {
+
+      leftMotorFront.spin(forward);
+      leftMotorMID.spin(forward);
+      leftMotorBack.spin(forward);
+       rightMotorFront.spin(forward); 
+       rightMotorMID.spin(forward); 
+       rightMotorBack.spin(forward);  
+     
+
+
+  // User control code here, inside the loop
+   while (true) {
+        float controlleraxispostion3 = Controller1.Axis3.position();
+        float controlleraxispostion1 = Controller1.Axis1.position();
+        double LeftSpeed =Controller1.Axis3.position() - Controller1.Axis1.position();
+        double RightSpeed = Controller1.Axis3.position() + Controller1.Axis1.position();
+        leftMotorFront.setVelocity( LeftSpeed, percent);
+        leftMotorMID.setVelocity(LeftSpeed,percent);
+        leftMotorBack.setVelocity(LeftSpeed, percent); 
+        rightMotorFront.setVelocity( RightSpeed, percent);
+        rightMotorMID.setVelocity(RightSpeed,percent);
+        rightMotorBack.setVelocity( RightSpeed, percent);  
+
+        if(fabs(controlleraxispostion3) < 15.0 && fabs(controlleraxispostion1) > 15.0) {
+      
+        leftMotorFront.setVelocity( (((0.55)*(Controller1.Axis3.position()) - Controller1.Axis1.position())), percent);
+        leftMotorMID.setVelocity((((0.55)*(Controller1.Axis3.position()) + Controller1.Axis1.position())),percent);
+        leftMotorBack.setVelocity((((0.55)*(Controller1.Axis3.position()) - Controller1.Axis1.position())), percent); 
+        rightMotorFront.setVelocity( (((0.55)*(Controller1.Axis3.position()) + Controller1.Axis1.position())), percent);
+        rightMotorMID.setVelocity((((0.55)*(Controller1.Axis3.position()) - Controller1.Axis1.position())),percent);
+        rightMotorBack.setVelocity((((0.55)*(Controller1.Axis3.position()) + Controller1.Axis1.position())), percent);             
+
+         }
+
+
+              
+
+
+        if(Controller1.ButtonR1.pressing()) {//output
+          Motor5.spin(forward,100,pct);
+        } else if (Controller1.ButtonL1.pressing()){//intake                               
+          Motor5.spin(reverse,100,pct);
+        }else {
+          Motor5.stop();
+        }      
+        if(Controller1.ButtonRight.pressing()) {//output
+          Motor6.spin(forward,60,pct);
+        } else if (Controller1.ButtonY.pressing()){//intake                               
+          Motor6.spin(reverse,100,pct);
+        }else {
+          Motor6.stop();
+        }      
+        
+
+
+
+        Controller1.ButtonUp.pressed(FrontWingsButton);
+        Controller1.ButtonL2.pressed(LeftWing);
+        Controller1.ButtonR2.pressed(RightWing);
+        Controller1.ButtonB.pressed(PtoButton);
+        wait(15,msec);
+        pneu(); 
+
+        this_thread::sleep_for(10);   
+  }
+}
+
+
+// Main will set up the competition functions and callbacks.
+
+int main() {
+  // Set up callbacks for autonomous and driver control periods.
+  Competition.autonomous(autonomous);
+  Competition.drivercontrol(usercontrol);
+
+  // Run the pre-autonomous function.
+  pre_auton();
+
+  // Prevent main from exiting with an infinite loop.
+  while (true) {
+    wait(100, msec);
+  }
+}
